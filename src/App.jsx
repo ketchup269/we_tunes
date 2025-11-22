@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Mic, MicOff, Music, Cloud, Sun, CloudRain, Snowflake, Wind, Moon, Languages } from 'lucide-react';
+import { Send, Mic, MicOff, Music, Cloud, Sun, CloudRain, Snowflake, Wind, Moon, Languages, ExternalLink } from 'lucide-react';
 import * as THREE from 'three';
-
-
 
 const WeatherSpotifyChatbot = () => {
   const [messages, setMessages] = useState([]);
@@ -17,9 +15,7 @@ const WeatherSpotifyChatbot = () => {
   const sceneRef = useRef(null);
   const messagesEndRef = useRef(null);
 
-  // IMPORTANT: Update this to your deployed backend URL
-  // For local development: 'http://localhost:3001/api'
-  // For production: 'https://your-backend-url.com/api'
+  // API Configuration - UPDATE THIS WITH YOUR RENDER URL
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
   // Translations
@@ -27,10 +23,10 @@ const WeatherSpotifyChatbot = () => {
     en: {
       title: "WeatherTunes AI",
       subtitle: "Weather forecasts meet perfect playlists",
-      welcome: "Hi! I'm your AI weather assistant with Spotify integration. Ask me about the weather in any city, and I'll recommend music to match the vibe! 🌤️🎵\n\nYou can also just chat with me - try saying hi!",
+      welcome: "Hi! I'm your AI weather assistant with Spotify integration. Ask me about the weather in any city, and I'll use Gemini AI to recommend perfect music for the vibe! 🌤️🎵\n\nYou can also just chat with me - try saying hi!",
       placeholder: "Ask about weather in any city or just chat...",
       tryExamples: 'Try: "What\'s the weather in Tokyo?" or just say "Hello!"',
-      nowPlaying: "Music Recommendations",
+      nowPlaying: "AI Music Recommendations",
       vibes: "vibes",
       by: "by",
       temperature: "Temperature",
@@ -47,6 +43,8 @@ const WeatherSpotifyChatbot = () => {
       cityNotFound: "City not found. Please check the spelling and try again.",
       voiceNotSupported: "Voice input is not supported in your browser.",
       voiceError: "Voice recognition error. Please try again.",
+      listenOn: "Listen on Spotify",
+      aiPowered: "AI-Powered",
       clothing: {
         cold: "warm layers and a jacket",
         cool: "a light jacket",
@@ -57,10 +55,10 @@ const WeatherSpotifyChatbot = () => {
     ja: {
       title: "ウェザーチューンズ AI",
       subtitle: "天気予報と完璧なプレイリスト",
-      welcome: "こんにちは!私はSpotify統合機能を備えたAI天気アシスタントです。どの都市の天気でもお尋ねください。雰囲気にぴったりの音楽をお勧めします!🌤️🎵\n\n普通に会話もできますよ!",
+      welcome: "こんにちは!私はSpotify統合機能を備えたAI天気アシスタントです。どの都市の天気でもお尋ねください。Gemini AIが雰囲気にぴったりの音楽をお勧めします!🌤️🎵\n\n普通に会話もできますよ!",
       placeholder: "都市の天気を尋ねるか、チャット...",
       tryExamples: '試してみる: "東京の天気は?" または "こんにちは!"',
-      nowPlaying: "音楽のおすすめ",
+      nowPlaying: "AI音楽のおすすめ",
       vibes: "な雰囲気",
       by: "作:",
       temperature: "気温",
@@ -77,6 +75,8 @@ const WeatherSpotifyChatbot = () => {
       cityNotFound: "都市が見つかりません。スペルを確認してもう一度お試しください。",
       voiceNotSupported: "お使いのブラウザでは音声入力がサポートされていません。",
       voiceError: "音声認識エラー。もう一度お試しください。",
+      listenOn: "Spotifyで聴く",
+      aiPowered: "AI搭載",
       clothing: {
         cold: "暖かい重ね着とジャケット",
         cool: "軽いジャケット",
@@ -195,7 +195,6 @@ const WeatherSpotifyChatbot = () => {
   const handleCasualChat = (message) => {
     const lowerMessage = message.toLowerCase();
     
-    // Greetings
     const greetings = ['hi', 'hello', 'hey', 'hola', 'こんにちは', 'おはよう', 'こんばんは'];
     if (greetings.some(g => lowerMessage.includes(g))) {
       const responses = language === 'ja' ? [
@@ -210,43 +209,39 @@ const WeatherSpotifyChatbot = () => {
       return responses[Math.floor(Math.random() * responses.length)];
     }
 
-    // How are you
     if (lowerMessage.includes('how are you') || lowerMessage.includes('元気')) {
       return language === 'ja' 
         ? 'ありがとうございます!私は元気です。どの都市の天気を調べますか?' 
         : 'I\'m doing great, thank you! Which city\'s weather would you like me to check?';
     }
 
-    // What can you do
     if (lowerMessage.includes('what can you do') || lowerMessage.includes('何ができ')) {
       return language === 'ja'
-        ? '私は世界中の都市の天気予報を提供し、その天気に合った音楽をSpotifyからおすすめできます!都市名を教えてください。'
-        : 'I can provide weather forecasts for cities around the world and recommend Spotify music that matches the mood! Just tell me a city name.';
+        ? '私は世界中の都市の天気予報を提供し、Gemini AIでその天気に合った音楽をSpotifyからおすすめできます!都市名を教えてください。'
+        : 'I can provide weather forecasts for cities worldwide and use Gemini AI to recommend Spotify music that matches the mood! Just tell me a city name.';
     }
 
-    // Thank you
     if (lowerMessage.includes('thank') || lowerMessage.includes('ありがとう')) {
       return language === 'ja'
         ? 'どういたしまして!他に何かお手伝いできることはありますか?'
         : 'You\'re welcome! Is there anything else I can help you with?';
     }
 
-    // Help
     if (lowerMessage.includes('help') || lowerMessage.includes('助けて') || lowerMessage.includes('ヘルプ')) {
       return language === 'ja'
-        ? '使い方は簡単です!「東京の天気は?」や「ロンドンの天気」のように都市名を含めて質問してください。天気に合った音楽もおすすめします!'
-        : 'It\'s easy! Just ask about the weather in any city like "What\'s the weather in Tokyo?" or "Weather in London". I\'ll also recommend music that matches the vibe!';
+        ? '使い方は簡単です!「東京の天気は?」や「ロンドンの天気」のように都市名を含めて質問してください。Gemini AIが天気に合った音楽もおすすめします!'
+        : 'It\'s easy! Just ask about the weather in any city like "What\'s the weather in Tokyo?" or "Weather in London". Gemini AI will recommend music that matches the vibe!';
     }
 
-    // Default response for unrecognized casual chat
     return language === 'ja'
       ? 'すみません、よく分かりませんでした。天気について質問するか、「助けて」と入力してください。'
       : 'I\'m not sure I understand. Try asking about the weather in a city, or type "help" for guidance!';
   };
 
-  // Real API call to get weather data
+  // API call to get weather data
   const getWeatherData = async (city) => {
     try {
+      console.log('Fetching weather for:', city);
       const response = await fetch(`${API_BASE_URL}/weather`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -255,19 +250,22 @@ const WeatherSpotifyChatbot = () => {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.details || error.error);
+        throw new Error(error.details || error.error || 'Failed to fetch weather');
       }
 
-      return await response.json();
+      const data = await response.json();
+      console.log('Weather data received:', data);
+      return data;
     } catch (error) {
       console.error('Weather fetch error:', error);
       throw error;
     }
   };
 
-  // Real API call to get Spotify music recommendations
+  // API call to get AI-powered music recommendations
   const getMusicRecommendations = async (weatherData) => {
     try {
+      console.log('Fetching music recommendations for:', weatherData);
       const response = await fetch(`${API_BASE_URL}/music`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -284,9 +282,11 @@ const WeatherSpotifyChatbot = () => {
       }
 
       const data = await response.json();
+      console.log('Music recommendations received:', data);
       return data.songs;
     } catch (error) {
       console.error('Music fetch error:', error);
+      // Return fallback songs if API fails
       return [
         {
           name: 'Perfect Day',
@@ -299,20 +299,34 @@ const WeatherSpotifyChatbot = () => {
   };
 
   const translateCondition = (condition) => {
+    if (language === 'en') return condition;
+    
     const conditionMap = {
-      'Sunny': language === 'ja' ? '晴れ' : 'Sunny',
-      'Cloudy': language === 'ja' ? '曇り' : 'Cloudy',
-      'Rainy': language === 'ja' ? '雨' : 'Rainy',
-      'Snowy': language === 'ja' ? '雪' : 'Snowy',
-      'Chilly': language === 'ja' ? '肌寒い' : 'Chilly'
+      'sunny': '晴れ',
+      'clear': '晴れ',
+      'cloudy': '曇り',
+      'partly cloudy': '部分的に曇り',
+      'overcast': '曇天',
+      'rain': '雨',
+      'rainy': '雨',
+      'drizzle': '霧雨',
+      'snow': '雪',
+      'snowy': '雪',
+      'storm': '嵐',
+      'thunderstorm': '雷雨'
     };
-    return conditionMap[condition] || condition;
+    
+    const lowerCondition = condition.toLowerCase();
+    for (const [eng, jpn] of Object.entries(conditionMap)) {
+      if (lowerCondition.includes(eng)) {
+        return jpn;
+      }
+    }
+    return condition;
   };
 
   const generateAIResponse = async (userMessage) => {
-    // Check if it's a weather query
     if (!isWeatherQuery(userMessage)) {
-      // Handle as casual conversation
       return handleCasualChat(userMessage);
     }
 
@@ -320,15 +334,17 @@ const WeatherSpotifyChatbot = () => {
     const cityMatch = userMessage.match(/in\s+([A-Za-z\s]+)|([A-Za-z\s]+)\s+weather|の天気|([ぁ-んァ-ヶー一-龯\s]+)の天気/i);
     const city = cityMatch ? (cityMatch[1] || cityMatch[2] || cityMatch[3] || '').trim() : (language === 'ja' ? '東京' : 'Tokyo');
     
-    // 1. Get weather data from API
+    console.log('Extracted city:', city);
+
+    // Get weather data
     const weather = await getWeatherData(city);
     setCurrentWeather(weather);
     
-    // 2. Get music recommendations using the weather data
+    // Get AI-powered music recommendations
     const tracks = await getMusicRecommendations(weather);
     setSpotifyTracks(tracks);
     
-    // 3. Generate response based on language
+    // Generate response
     const clothingAdvice = weather.temp < 10 ? t.clothing.cold :
                           weather.temp < 20 ? t.clothing.cool :
                           weather.temp < 25 ? t.clothing.mild :
@@ -338,11 +354,11 @@ const WeatherSpotifyChatbot = () => {
     
     // Format song recommendations
     const songList = tracks.map((track, idx) => 
-      `${idx + 1}. "${track.name}" ${t.by} ${track.artist} - ${track.reason || track.mood}`
+      `${idx + 1}. "${track.name}" ${t.by} ${track.artist}${track.reason ? ` - ${track.reason}` : ''}`
     ).join('\n');
     
     if (language === 'ja') {
-      return `${weather.city}の天気は${translatedCondition.toLowerCase()}で、気温は${weather.temp}°Cです。
+      return `${weather.city}の天気は${translatedCondition}で、気温は${weather.temp}°Cです。
 
 🌡️ ${t.currentConditions}
 • ${t.temperature}: ${weather.temp}°C
@@ -352,10 +368,12 @@ const WeatherSpotifyChatbot = () => {
 
 👔 ${clothingAdvice}${t.recommend}。
 
-🎵 この${translatedCondition.toLowerCase()}${t.weather}おすすめします:
-${songList}`;
+🎵 ${t.aiPowered} - この天気におすすめの音楽:
+${songList}
+
+Gemini AIが天気の雰囲気に合わせてこれらの曲を選びました!`;
     } else {
-      return `The weather in ${weather.city} is ${translatedCondition.toLowerCase()} with a temperature of ${weather.temp}°C.
+      return `The weather in ${weather.city} is ${translatedCondition} with a temperature of ${weather.temp}°C.
 
 🌡️ ${t.currentConditions}
 • ${t.temperature}: ${weather.temp}°C
@@ -365,8 +383,10 @@ ${songList}`;
 
 👔 ${t.recommend} ${clothingAdvice}.
 
-🎵 ${t.listening} ${translatedCondition.toLowerCase()} ${t.weather}:
-${songList}`;
+🎵 ${t.aiPowered} Music Recommendations:
+${songList}
+
+These songs were selected by Gemini AI to match the weather vibe!`;
     }
   };
 
@@ -394,9 +414,10 @@ ${songList}`;
       
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
+      console.error('Error generating response:', error);
       const errorMessage = {
         type: 'bot',
-        content: error.message.includes('not found') ? t.cityNotFound : t.error,
+        content: error.message.includes('not found') ? t.cityNotFound : `${t.error}\n\nError: ${error.message}`,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -438,21 +459,25 @@ ${songList}`;
   };
 
   const getWeatherIcon = (condition) => {
-    const icons = {
-      'Sunny': <Sun className="w-6 h-6 text-yellow-400" />,
-      'Cloudy': <Cloud className="w-6 h-6 text-gray-400" />,
-      'Rainy': <CloudRain className="w-6 h-6 text-blue-400" />,
-      'Snowy': <Snowflake className="w-6 h-6 text-blue-200" />,
-      'Chilly': <Wind className="w-6 h-6 text-blue-300" />
-    };
-    return icons[condition] || <Cloud className="w-6 h-6" />;
+    const lowerCondition = condition.toLowerCase();
+    if (lowerCondition.includes('sun') || lowerCondition.includes('clear')) {
+      return <Sun className="w-6 h-6 text-yellow-400" />;
+    } else if (lowerCondition.includes('cloud')) {
+      return <Cloud className="w-6 h-6 text-gray-400" />;
+    } else if (lowerCondition.includes('rain') || lowerCondition.includes('drizzle')) {
+      return <CloudRain className="w-6 h-6 text-blue-400" />;
+    } else if (lowerCondition.includes('snow')) {
+      return <Snowflake className="w-6 h-6 text-blue-200" />;
+    } else if (lowerCondition.includes('storm') || lowerCondition.includes('thunder')) {
+      return <Wind className="w-6 h-6 text-blue-300" />;
+    }
+    return <Cloud className="w-6 h-6" />;
   };
 
   const toggleLanguage = () => {
     setLanguage(prev => prev === 'en' ? 'ja' : 'en');
   };
 
-  
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900' : 'bg-gradient-to-br from-blue-50 via-white to-blue-50'} transition-all duration-500`}>
       <div className="fixed inset-0 pointer-events-none">
@@ -526,15 +551,32 @@ ${songList}`;
                 <div className="space-y-3">
                   {spotifyTracks.slice(0, 3).map((track, idx) => (
                     <div key={idx} className={`p-3 rounded-lg ${isDark ? 'bg-white/10' : 'bg-white/50'}`}>
-                      <p className={`font-semibold ${isDark ? 'text-green-400' : 'text-green-700'}`}>
-                        {track.name}
-                      </p>
-                      <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                        {track.artist}
-                      </p>
-                      <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                        {track.mood}
-                      </p>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <p className={`font-semibold ${isDark ? 'text-green-400' : 'text-green-700'}`}>
+                            {track.name}
+                          </p>
+                          <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                            {track.artist}
+                          </p>
+                          {track.reason && (
+                            <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                              {track.reason}
+                            </p>
+                          )}
+                        </div>
+                        {track.url && (
+                          <a
+                            href={track.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`p-2 rounded-lg ${isDark ? 'bg-green-500/20 hover:bg-green-500/30' : 'bg-green-100 hover:bg-green-200'} transition-colors`}
+                            title={t.listenOn}
+                          >
+                            <ExternalLink className="w-4 h-4 text-green-500" />
+                          </a>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

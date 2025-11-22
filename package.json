@@ -1,7 +1,6 @@
 {
   "name": "weather-music-chatbot",
   "version": "1.0.0",
-  "type": "module",
   "scripts": {
     "dev": "concurrently \"vite\" \"node server/index.js\"",
     "build": "vite build",

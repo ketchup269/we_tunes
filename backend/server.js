@@ -4,7 +4,18 @@ const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
+
+// CORS Configuration - Fixed to allow all origins for deployed apps
+app.use(cors({
+  origin: '*', // Allow all origins (change to specific domain in production)
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
+// Handle preflight requests
+app.options('*', cors());
+
 app.use(express.json());
 
 // Spotify Access Token Cache
@@ -13,7 +24,6 @@ let tokenExpiry = null;
 
 // Function to get Spotify access token
 async function getSpotifyToken() {
-  // Return cached token if still valid
   if (spotifyToken && tokenExpiry && Date.now() < tokenExpiry) {
     console.log('✅ Using cached Spotify token');
     return spotifyToken;
@@ -37,7 +47,7 @@ async function getSpotifyToken() {
     );
 
     spotifyToken = response.data.access_token;
-    tokenExpiry = Date.now() + (response.data.expires_in * 1000) - 60000; // Refresh 1 min early
+    tokenExpiry = Date.now() + (response.data.expires_in * 1000) - 60000;
     
     console.log('✅ Spotify token obtained successfully');
     return spotifyToken;
@@ -74,7 +84,6 @@ app.post('/api/weather', async (req, res) => {
 
     const data = weatherResponse.data;
     
-    // Map WeatherAPI conditions to your app's conditions
     const conditionText = data.current.condition.text.toLowerCase();
     let mappedCondition = 'Cloudy';
     
@@ -137,15 +146,13 @@ app.post('/api/music', async (req, res) => {
     console.log(`\n=== SPOTIFY MUSIC REQUEST ===`);
     console.log(`Weather: ${condition}, City: ${city}, Temp: ${temp}°C`);
 
-    // Get Spotify access token
     const token = await getSpotifyToken();
 
-    // Map weather conditions to Spotify search queries and audio features
     const weatherToMusicMap = {
       'Sunny': {
         keywords: ['summer', 'happy', 'sunshine', 'upbeat', 'party'],
         mood: 'upbeat and energetic',
-        target_valence: 0.8, // happiness
+        target_valence: 0.8,
         target_energy: 0.7
       },
       'Rainy': {
@@ -173,7 +180,6 @@ app.post('/api/music', async (req, res) => {
 
     console.log(`Searching Spotify for: ${randomKeyword} music`);
 
-    // Search for tracks on Spotify
     const searchResponse = await axios.get('https://api.spotify.com/v1/search', {
       headers: {
         'Authorization': `Bearer ${token}`
@@ -192,7 +198,6 @@ app.post('/api/music', async (req, res) => {
       throw new Error('No tracks found');
     }
 
-    // Select 3 diverse tracks
     const selectedTracks = [];
     const usedIndices = new Set();
 
@@ -230,9 +235,7 @@ app.post('/api/music', async (req, res) => {
     console.error('Error response:', error.response?.data);
     console.error('=== END ERROR ===\n');
 
-    // Handle specific error cases
     if (error.response?.status === 401) {
-      // Token expired or invalid, clear cache
       spotifyToken = null;
       tokenExpiry = null;
       
@@ -242,7 +245,6 @@ app.post('/api/music', async (req, res) => {
       });
     }
 
-    // Fallback to mock data if Spotify fails
     console.log('⚠️  Using fallback mock data');
     
     const mockData = {
@@ -401,13 +403,6 @@ app.post('/api/music', async (req, res) => {
   }
 });
 
-// Legacy endpoint
-app.post('/api/spotify', async (req, res) => {
-  req.body.condition = req.body.condition || 'Sunny';
-  const musicReq = Object.assign({}, req, { url: '/api/music', body: req.body });
-  return app._router.handle(musicReq, res);
-});
-
 // Health check endpoint
 app.get('/health', async (req, res) => {
   const health = {
@@ -416,7 +411,6 @@ app.get('/health', async (req, res) => {
     services: {}
   };
 
-  // Test WeatherAPI
   try {
     await axios.get('http://api.weatherapi.com/v1/current.json', {
       params: {
@@ -430,7 +424,6 @@ app.get('/health', async (req, res) => {
     health.services.weatherAPI = `❌ Offline: ${error.code || error.message}`;
   }
 
-  // Test Spotify API
   try {
     const token = await getSpotifyToken();
     health.services.spotifyAPI = '✅ Online (Token obtained)';
@@ -461,7 +454,6 @@ app.listen(PORT, async () => {
   console.log(`   Spotify Client ID: ${process.env.SPOTIFY_CLIENT_ID ? '✅ Configured' : '❌ Missing'}`);
   console.log(`   Spotify Client Secret: ${process.env.SPOTIFY_CLIENT_SECRET ? '✅ Configured' : '❌ Missing'}`);
   
-  // Test WeatherAPI
   console.log(`\n🔍 Testing WeatherAPI...`);
   try {
     const response = await axios.get('http://api.weatherapi.com/v1/current.json', {
@@ -476,13 +468,11 @@ app.listen(PORT, async () => {
     console.log(`   ❌ WeatherAPI test failed: ${error.message}`);
   }
 
-  // Test Spotify API
   console.log(`\n🔍 Testing Spotify API...`);
   try {
     const token = await getSpotifyToken();
     console.log(`   ✅ Spotify API is working! Token obtained: ${token.substring(0, 20)}...`);
     
-    // Test search
     const testSearch = await axios.get('https://api.spotify.com/v1/search', {
       headers: { 'Authorization': `Bearer ${token}` },
       params: { q: 'sunshine', type: 'track', limit: 1 }

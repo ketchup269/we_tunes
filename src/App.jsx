@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Mic, MicOff, Music, Cloud, Sun, CloudRain, Snowflake, Wind, Moon, Languages } from 'lucide-react';
 import * as THREE from 'three';
-import { configDotenv } from 'dotenv';
-configDotenv(); 
+
 
 
 const WeatherSpotifyChatbot = () => {

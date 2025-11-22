@@ -15,7 +15,9 @@ const WeatherSpotifyChatbot = () => {
   const sceneRef = useRef(null);
   const messagesEndRef = useRef(null);
 
-  // API Base URL - change this to your backend URL
+  // IMPORTANT: Update this to your deployed backend URL
+  // For local development: 'http://localhost:3001/api'
+  // For production: 'https://your-backend-url.com/api'
   const API_BASE_URL = 'http://localhost:3001/api';
 
   // Translations
@@ -23,9 +25,9 @@ const WeatherSpotifyChatbot = () => {
     en: {
       title: "WeatherTunes AI",
       subtitle: "Weather forecasts meet perfect playlists",
-      welcome: "Hi! I'm your AI weather assistant with Spotify integration. Ask me about the weather in any city, and I'll recommend music to match the vibe! 🌤️🎵",
-      placeholder: "Ask about weather in any city...",
-      tryExamples: 'Try: "What\'s the weather in Tokyo?" or "Weather in London"',
+      welcome: "Hi! I'm your AI weather assistant with Spotify integration. Ask me about the weather in any city, and I'll recommend music to match the vibe! 🌤️🎵\n\nYou can also just chat with me - try saying hi!",
+      placeholder: "Ask about weather in any city or just chat...",
+      tryExamples: 'Try: "What\'s the weather in Tokyo?" or just say "Hello!"',
       nowPlaying: "Music Recommendations",
       vibes: "vibes",
       by: "by",
@@ -53,9 +55,9 @@ const WeatherSpotifyChatbot = () => {
     ja: {
       title: "ウェザーチューンズ AI",
       subtitle: "天気予報と完璧なプレイリスト",
-      welcome: "こんにちは!私はSpotify統合機能を備えたAI天気アシスタントです。どの都市の天気でもお尋ねください。雰囲気にぴったりの音楽をお勧めします!🌤️🎵",
-      placeholder: "都市の天気を尋ねる...",
-      tryExamples: '試してみる: "東京の天気は?" または "ロンドンの天気"',
+      welcome: "こんにちは!私はSpotify統合機能を備えたAI天気アシスタントです。どの都市の天気でもお尋ねください。雰囲気にぴったりの音楽をお勧めします!🌤️🎵\n\n普通に会話もできますよ!",
+      placeholder: "都市の天気を尋ねるか、チャット...",
+      tryExamples: '試してみる: "東京の天気は?" または "こんにちは!"',
       nowPlaying: "音楽のおすすめ",
       vibes: "な雰囲気",
       by: "作:",
@@ -177,6 +179,69 @@ const WeatherSpotifyChatbot = () => {
     }]);
   }, [language]);
 
+  // Check if message is asking about weather
+  const isWeatherQuery = (message) => {
+    const weatherKeywords = [
+      'weather', 'temperature', 'temp', 'forecast', 'climate',
+      '天気', '気温', '予報'
+    ];
+    const lowerMessage = message.toLowerCase();
+    return weatherKeywords.some(keyword => lowerMessage.includes(keyword));
+  };
+
+  // Handle casual conversation
+  const handleCasualChat = (message) => {
+    const lowerMessage = message.toLowerCase();
+    
+    // Greetings
+    const greetings = ['hi', 'hello', 'hey', 'hola', 'こんにちは', 'おはよう', 'こんばんは'];
+    if (greetings.some(g => lowerMessage.includes(g))) {
+      const responses = language === 'ja' ? [
+        'こんにちは!元気ですか?どの都市の天気を知りたいですか?',
+        'やあ!天気について質問がありますか?',
+        'こんにちは!今日はどんなご用件ですか?'
+      ] : [
+        'Hello! How are you doing? Which city\'s weather would you like to know about?',
+        'Hey there! Do you have any weather questions?',
+        'Hi! What can I help you with today?'
+      ];
+      return responses[Math.floor(Math.random() * responses.length)];
+    }
+
+    // How are you
+    if (lowerMessage.includes('how are you') || lowerMessage.includes('元気')) {
+      return language === 'ja' 
+        ? 'ありがとうございます!私は元気です。どの都市の天気を調べますか?' 
+        : 'I\'m doing great, thank you! Which city\'s weather would you like me to check?';
+    }
+
+    // What can you do
+    if (lowerMessage.includes('what can you do') || lowerMessage.includes('何ができ')) {
+      return language === 'ja'
+        ? '私は世界中の都市の天気予報を提供し、その天気に合った音楽をSpotifyからおすすめできます!都市名を教えてください。'
+        : 'I can provide weather forecasts for cities around the world and recommend Spotify music that matches the mood! Just tell me a city name.';
+    }
+
+    // Thank you
+    if (lowerMessage.includes('thank') || lowerMessage.includes('ありがとう')) {
+      return language === 'ja'
+        ? 'どういたしまして!他に何かお手伝いできることはありますか?'
+        : 'You\'re welcome! Is there anything else I can help you with?';
+    }
+
+    // Help
+    if (lowerMessage.includes('help') || lowerMessage.includes('助けて') || lowerMessage.includes('ヘルプ')) {
+      return language === 'ja'
+        ? '使い方は簡単です!「東京の天気は?」や「ロンドンの天気」のように都市名を含めて質問してください。天気に合った音楽もおすすめします!'
+        : 'It\'s easy! Just ask about the weather in any city like "What\'s the weather in Tokyo?" or "Weather in London". I\'ll also recommend music that matches the vibe!';
+    }
+
+    // Default response for unrecognized casual chat
+    return language === 'ja'
+      ? 'すみません、よく分かりませんでした。天気について質問するか、「助けて」と入力してください。'
+      : 'I\'m not sure I understand. Try asking about the weather in a city, or type "help" for guidance!';
+  };
+
   // Real API call to get weather data
   const getWeatherData = async (city) => {
     try {
@@ -217,10 +282,9 @@ const WeatherSpotifyChatbot = () => {
       }
 
       const data = await response.json();
-      return data.songs; // Returns array of 3 songs
+      return data.songs;
     } catch (error) {
       console.error('Music fetch error:', error);
-      // Return fallback tracks
       return [
         {
           name: 'Perfect Day',
@@ -244,6 +308,12 @@ const WeatherSpotifyChatbot = () => {
   };
 
   const generateAIResponse = async (userMessage) => {
+    // Check if it's a weather query
+    if (!isWeatherQuery(userMessage)) {
+      // Handle as casual conversation
+      return handleCasualChat(userMessage);
+    }
+
     // Extract city from message
     const cityMatch = userMessage.match(/in\s+([A-Za-z\s]+)|([A-Za-z\s]+)\s+weather|の天気|([ぁ-んァ-ヶー一-龯\s]+)の天気/i);
     const city = cityMatch ? (cityMatch[1] || cityMatch[2] || cityMatch[3] || '').trim() : (language === 'ja' ? '東京' : 'Tokyo');
@@ -379,7 +449,8 @@ ${songList}`;
   const toggleLanguage = () => {
     setLanguage(prev => prev === 'en' ? 'ja' : 'en');
   };
-
+  
+  
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900' : 'bg-gradient-to-br from-blue-50 via-white to-blue-50'} transition-all duration-500`}>
       <div className="fixed inset-0 pointer-events-none">

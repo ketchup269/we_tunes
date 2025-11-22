@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Mic, MicOff, Music, Cloud, Sun, CloudRain, Snowflake, Wind, Moon, Languages } from 'lucide-react';
 import * as THREE from 'three';
+import { configDotenv } from 'dotenv';
+configDotenv(); 
+
 
 const WeatherSpotifyChatbot = () => {
   const [messages, setMessages] = useState([]);
@@ -18,7 +21,7 @@ const WeatherSpotifyChatbot = () => {
   // IMPORTANT: Update this to your deployed backend URL
   // For local development: 'http://localhost:3001/api'
   // For production: 'https://your-backend-url.com/api'
-  const API_BASE_URL = 'http://localhost:3001/api';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
   // Translations
   const translations = {
@@ -449,7 +452,7 @@ ${songList}`;
   const toggleLanguage = () => {
     setLanguage(prev => prev === 'en' ? 'ja' : 'en');
   };
-  
+
   
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900' : 'bg-gradient-to-br from-blue-50 via-white to-blue-50'} transition-all duration-500`}>

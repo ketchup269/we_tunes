@@ -63,7 +63,7 @@ app.post('/api/weather', async (req, res) => {
       {
         params: {
           q: city,
-          appid: process.env.WEATHERAPI_KEY,
+          key: process.env.WEATHERAPI_KEY,
           units: 'metric'
         }
       }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Mic, MicOff, Music, Cloud, Sun, CloudRain, Snowflake, Wind, Moon, Stars, Languages } from 'lucide-react';
+import { Send, Mic, MicOff, Music, Cloud, Sun, CloudRain, Snowflake, Wind, Moon, Languages } from 'lucide-react';
 import * as THREE from 'three';
 
 const WeatherSpotifyChatbot = () => {
@@ -8,22 +8,25 @@ const WeatherSpotifyChatbot = () => {
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentWeather, setCurrentWeather] = useState(null);
-  const [spotifyTrack, setSpotifyTrack] = useState(null);
+  const [spotifyTracks, setSpotifyTracks] = useState(null);
   const [isDark, setIsDark] = useState(true);
-  const [language, setLanguage] = useState('en'); // 'en' or 'ja'
+  const [language, setLanguage] = useState('en');
   const canvasRef = useRef(null);
   const sceneRef = useRef(null);
   const messagesEndRef = useRef(null);
 
+  // API Base URL - change this to your backend URL
+  const API_BASE_URL = 'http://localhost:3001/api';
+
   // Translations
   const translations = {
     en: {
-      title: "SoWe AI",
-      subtitle: "Play your mood",
-      welcome: "Hi! What does your weather sound like? Ask me about the weather in any city, and I'll recommend music to match the vibe! 🌤️🎵",
+      title: "WeatherTunes AI",
+      subtitle: "Weather forecasts meet perfect playlists",
+      welcome: "Hi! I'm your AI weather assistant with Spotify integration. Ask me about the weather in any city, and I'll recommend music to match the vibe! 🌤️🎵",
       placeholder: "Ask about weather in any city...",
       tryExamples: 'Try: "What\'s the weather in Tokyo?" or "Weather in London"',
-      nowPlaying: "Now Playing",
+      nowPlaying: "Music Recommendations",
       vibes: "vibes",
       by: "by",
       temperature: "Temperature",
@@ -37,6 +40,7 @@ const WeatherSpotifyChatbot = () => {
       for: "for this weather!",
       currentConditions: "Current conditions:",
       error: "Sorry, I encountered an error. Please try again.",
+      cityNotFound: "City not found. Please check the spelling and try again.",
       voiceNotSupported: "Voice input is not supported in your browser.",
       voiceError: "Voice recognition error. Please try again.",
       clothing: {
@@ -49,12 +53,12 @@ const WeatherSpotifyChatbot = () => {
     ja: {
       title: "ウェザーチューンズ AI",
       subtitle: "天気予報と完璧なプレイリスト",
-      welcome: "こんにちは！私はSpotify統合機能を備えたAI天気アシスタントです。どの都市の天気でもお尋ねください。雰囲気にぴったりの音楽をお勧めします！🌤️🎵",
+      welcome: "こんにちは!私はSpotify統合機能を備えたAI天気アシスタントです。どの都市の天気でもお尋ねください。雰囲気にぴったりの音楽をお勧めします!🌤️🎵",
       placeholder: "都市の天気を尋ねる...",
-      tryExamples: '試してみる: "東京の天気は？" または "ロンドンの天気"',
-      nowPlaying: "再生中",
+      tryExamples: '試してみる: "東京の天気は?" または "ロンドンの天気"',
+      nowPlaying: "音楽のおすすめ",
       vibes: "な雰囲気",
-      by: "作：",
+      by: "作:",
       temperature: "気温",
       condition: "状態",
       humidity: "湿度",
@@ -63,9 +67,10 @@ const WeatherSpotifyChatbot = () => {
       listening: "この",
       weather: "天気に基づいて、",
       perfect: "を聴くことをお勧めします - この天気にぴったりの",
-      for: "な雰囲気です！",
-      currentConditions: "現在の状況：",
+      for: "な雰囲気です!",
+      currentConditions: "現在の状況:",
       error: "申し訳ございません。エラーが発生しました。もう一度お試しください。",
+      cityNotFound: "都市が見つかりません。スペルを確認してもう一度お試しください。",
       voiceNotSupported: "お使いのブラウザでは音声入力がサポートされていません。",
       voiceError: "音声認識エラー。もう一度お試しください。",
       clothing: {
@@ -95,7 +100,6 @@ const WeatherSpotifyChatbot = () => {
     renderer.setClearColor(0x000000, 0);
     camera.position.z = 5;
 
-    // Create animated particles
     const particlesGeometry = new THREE.BufferGeometry();
     const particlesCount = 1000;
     const posArray = new Float32Array(particlesCount * 3);
@@ -116,7 +120,6 @@ const WeatherSpotifyChatbot = () => {
     const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
     scene.add(particlesMesh);
 
-    // Create central sphere
     const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
     const sphereMaterial = new THREE.MeshPhongMaterial({
       color: isDark ? 0x2196F3 : 0x64B5F6,
@@ -129,7 +132,6 @@ const WeatherSpotifyChatbot = () => {
     const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
     scene.add(sphere);
 
-    // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
     
@@ -139,20 +141,16 @@ const WeatherSpotifyChatbot = () => {
 
     sceneRef.current = { scene, camera, renderer, particlesMesh, sphere };
 
-    // Animation loop
     let animationId;
     const animate = () => {
       animationId = requestAnimationFrame(animate);
-      
       particlesMesh.rotation.y += 0.001;
       particlesMesh.rotation.x += 0.0005;
       sphere.rotation.y += 0.005;
-      
       renderer.render(scene, camera);
     };
     animate();
 
-    // Handle resize
     const handleResize = () => {
       camera.aspect = window.innerWidth / 400;
       camera.updateProjectionMatrix();
@@ -167,12 +165,10 @@ const WeatherSpotifyChatbot = () => {
     };
   }, [isDark]);
 
-  // Auto-scroll messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Add welcome message with language support
   useEffect(() => {
     setMessages([{
       type: 'bot',
@@ -181,57 +177,59 @@ const WeatherSpotifyChatbot = () => {
     }]);
   }, [language]);
 
-  // Mock API calls (replace with real endpoints)
+  // Real API call to get weather data
   const getWeatherData = async (city) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const mockWeather = () => {
-  const temp = Math.floor(Math.random() * 30) + 5;
+    try {
+      const response = await fetch(`${API_BASE_URL}/weather`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ city })
+      });
 
-  // Determine condition
-  let condition = "";
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.details || error.error);
+      }
 
-  if (temp > 22) {
-    condition = "Sunny";
-  } 
-  else if (temp >= 16 && temp <= 22) {
-    const options = ["Cloudy", "Rainy"];
-    condition = options[Math.floor(Math.random() * options.length)];
-  } 
-  else if (temp < 16 && temp >= 5) {
-    condition = "Chilly";
-  } 
-  else if (temp < 5) {
-    condition = "Snowy";
-  }
-
-  return {
-    city: city || (language === 'ja' ? '東京' : 'Tokyo'),
-    temp,
-    condition,
-    humidity: Math.floor(Math.random() * 50) + 40,
-    windSpeed: Math.floor(Math.random() * 20) + 5,
-    description:
-      language === 'ja'
-        ? '屋外活動に最適な天気'
-        : 'Perfect weather for outdoor activities'
+      return await response.json();
+    } catch (error) {
+      console.error('Weather fetch error:', error);
+      throw error;
+    }
   };
-};
-    return mockWeather();
-  };
-  const getSpotifyRecommendation = async (weather) => {
-    // Simulate Spotify API call
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const mockTracks = {
-      'Sunny': { name: 'Walking on Sunshine', artist: 'Katrina & The Waves', mood: language === 'ja' ? 'アップビート' : 'upbeat' },
-      'Cloudy': { name: 'Cloudy', artist: 'Simon & Garfunkel', mood: language === 'ja' ? 'まろやか' : 'mellow' },
-      'Rainy': { name: 'Rhythm of the Rain', artist: 'The Cascades', mood: language === 'ja' ? '心地よい' : 'cozy' },
-      'Snowy': { name: 'Let It Snow', artist: 'Dean Martin', mood: language === 'ja' ? '温かい' : 'warm' }
-    };
-    
-    return mockTracks[weather] || mockTracks['Sunny'];
+
+  // Real API call to get Spotify music recommendations
+  const getMusicRecommendations = async (weatherData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/music`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          condition: weatherData.condition,
+          city: weatherData.city,
+          temp: weatherData.temp,
+          description: weatherData.description
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch music recommendations');
+      }
+
+      const data = await response.json();
+      return data.songs; // Returns array of 3 songs
+    } catch (error) {
+      console.error('Music fetch error:', error);
+      // Return fallback tracks
+      return [
+        {
+          name: 'Perfect Day',
+          artist: 'Lou Reed',
+          mood: language === 'ja' ? '心地よい' : 'pleasant',
+          reason: 'A timeless classic'
+        }
+      ];
+    }
   };
 
   const translateCondition = (condition) => {
@@ -239,7 +237,8 @@ const WeatherSpotifyChatbot = () => {
       'Sunny': language === 'ja' ? '晴れ' : 'Sunny',
       'Cloudy': language === 'ja' ? '曇り' : 'Cloudy',
       'Rainy': language === 'ja' ? '雨' : 'Rainy',
-      'Snowy': language === 'ja' ? '雪' : 'Snowy'
+      'Snowy': language === 'ja' ? '雪' : 'Snowy',
+      'Chilly': language === 'ja' ? '肌寒い' : 'Chilly'
     };
     return conditionMap[condition] || condition;
   };
@@ -247,19 +246,28 @@ const WeatherSpotifyChatbot = () => {
   const generateAIResponse = async (userMessage) => {
     // Extract city from message
     const cityMatch = userMessage.match(/in\s+([A-Za-z\s]+)|([A-Za-z\s]+)\s+weather|の天気|([ぁ-んァ-ヶー一-龯\s]+)の天気/i);
-    const city = cityMatch ? (cityMatch[1] || cityMatch[2] || cityMatch[3] || '').trim() : (language === 'ja' ? 'あなたの場所' : 'your location');
+    const city = cityMatch ? (cityMatch[1] || cityMatch[2] || cityMatch[3] || '').trim() : (language === 'ja' ? '東京' : 'Tokyo');
     
-    // Get weather data
+    // 1. Get weather data from API
     const weather = await getWeatherData(city);
     setCurrentWeather(weather);
     
-    // Get Spotify recommendation
-    const track = await getSpotifyRecommendation(weather.condition);
-    setSpotifyTrack(track);
+    // 2. Get music recommendations using the weather data
+    const tracks = await getMusicRecommendations(weather);
+    setSpotifyTracks(tracks);
     
-    // Generate response based on language
+    // 3. Generate response based on language
+    const clothingAdvice = weather.temp < 10 ? t.clothing.cold :
+                          weather.temp < 20 ? t.clothing.cool :
+                          weather.temp < 25 ? t.clothing.mild :
+                          t.clothing.warm;
     
     const translatedCondition = translateCondition(weather.condition);
+    
+    // Format song recommendations
+    const songList = tracks.map((track, idx) => 
+      `${idx + 1}. "${track.name}" ${t.by} ${track.artist} - ${track.reason || track.mood}`
+    ).join('\n');
     
     if (language === 'ja') {
       return `${weather.city}の天気は${translatedCondition.toLowerCase()}で、気温は${weather.temp}°Cです。
@@ -270,9 +278,10 @@ const WeatherSpotifyChatbot = () => {
 • ${t.humidity}: ${weather.humidity}%
 • ${t.wind}: ${weather.windSpeed} km/h
 
+👔 ${clothingAdvice}${t.recommend}。
 
-
-🎵 ${translatedCondition.toLowerCase()}${t.weather}「${track.name}」（${t.by}${track.artist}）${t.perfect}${track.mood}${t.for}`;
+🎵 この${translatedCondition.toLowerCase()}${t.weather}おすすめします:
+${songList}`;
     } else {
       return `The weather in ${weather.city} is ${translatedCondition.toLowerCase()} with a temperature of ${weather.temp}°C.
 
@@ -282,9 +291,10 @@ const WeatherSpotifyChatbot = () => {
 • ${t.humidity}: ${weather.humidity}%
 • ${t.wind}: ${weather.windSpeed} km/h
 
+👔 ${t.recommend} ${clothingAdvice}.
 
-
-🎵 ${t.listening} ${translatedCondition.toLowerCase()} ${t.weather} "${track.name}" ${t.by} ${track.artist} - ${t.perfect} ${track.mood} ${t.vibes} ${t.for}`;
+🎵 ${t.listening} ${translatedCondition.toLowerCase()} ${t.weather}:
+${songList}`;
     }
   };
 
@@ -314,7 +324,7 @@ const WeatherSpotifyChatbot = () => {
     } catch (error) {
       const errorMessage = {
         type: 'bot',
-        content: t.error,
+        content: error.message.includes('not found') ? t.cityNotFound : t.error,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -360,7 +370,8 @@ const WeatherSpotifyChatbot = () => {
       'Sunny': <Sun className="w-6 h-6 text-yellow-400" />,
       'Cloudy': <Cloud className="w-6 h-6 text-gray-400" />,
       'Rainy': <CloudRain className="w-6 h-6 text-blue-400" />,
-      'Snowy': <Snowflake className="w-6 h-6 text-blue-200" />
+      'Snowy': <Snowflake className="w-6 h-6 text-blue-200" />,
+      'Chilly': <Wind className="w-6 h-6 text-blue-300" />
     };
     return icons[condition] || <Cloud className="w-6 h-6" />;
   };
@@ -371,12 +382,10 @@ const WeatherSpotifyChatbot = () => {
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900' : 'bg-gradient-to-br from-blue-50 via-white to-blue-50'} transition-all duration-500`}>
-      {/* Three.js Canvas Background */}
       <div className="fixed inset-0 pointer-events-none">
         <canvas ref={canvasRef} className="w-full h-[400px] opacity-30" />
       </div>
 
-      {/* Header */}
       <div className="relative z-10 px-4 py-6">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -413,8 +422,7 @@ const WeatherSpotifyChatbot = () => {
         </div>
       </div>
 
-      {/* Weather & Spotify Cards */}
-      {(currentWeather || spotifyTrack) && (
+      {(currentWeather || spotifyTracks) && (
         <div className="relative z-10 px-4 mb-6">
           <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-4">
             {currentWeather && (
@@ -434,7 +442,7 @@ const WeatherSpotifyChatbot = () => {
               </div>
             )}
             
-            {spotifyTrack && (
+            {spotifyTracks && spotifyTracks.length > 0 && (
               <div className={`p-6 rounded-2xl ${isDark ? 'bg-green-500/20' : 'bg-green-50'} backdrop-blur-lg border ${isDark ? 'border-green-400/30' : 'border-green-200'}`}>
                 <div className="flex items-center gap-3 mb-3">
                   <Music className="w-6 h-6 text-green-500" />
@@ -442,26 +450,30 @@ const WeatherSpotifyChatbot = () => {
                     {t.nowPlaying}
                   </h3>
                 </div>
-                <p className={`font-semibold text-lg ${isDark ? 'text-green-400' : 'text-green-700'}`}>
-                  {spotifyTrack.name}
-                </p>
-                <p className={`${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                  {t.by} {spotifyTrack.artist}
-                </p>
-                <p className={`text-sm mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {spotifyTrack.mood} {t.vibes}
-                </p>
+                <div className="space-y-3">
+                  {spotifyTracks.slice(0, 3).map((track, idx) => (
+                    <div key={idx} className={`p-3 rounded-lg ${isDark ? 'bg-white/10' : 'bg-white/50'}`}>
+                      <p className={`font-semibold ${isDark ? 'text-green-400' : 'text-green-700'}`}>
+                        {track.name}
+                      </p>
+                      <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                        {track.artist}
+                      </p>
+                      <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {track.mood}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Chat Container */}
       <div className="relative z-10 px-4 pb-6">
         <div className="max-w-4xl mx-auto">
           <div className={`rounded-3xl ${isDark ? 'bg-white/10' : 'bg-white/80'} backdrop-blur-lg border ${isDark ? 'border-white/20' : 'border-gray-200'} shadow-2xl overflow-hidden`}>
-            {/* Messages */}
             <div className="h-[500px] overflow-y-auto p-6 space-y-4">
               {messages.map((msg, idx) => (
                 <div
@@ -500,7 +512,6 @@ const WeatherSpotifyChatbot = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area */}
             <div className={`p-4 border-t ${isDark ? 'border-white/20 bg-white/5' : 'border-gray-200 bg-gray-50/50'}`}>
               <div className="flex gap-3">
                 <button

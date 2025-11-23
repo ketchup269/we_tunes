@@ -242,7 +242,7 @@ const WeatherSpotifyChatbot = () => {
   const getWeatherData = async (city) => {
     try {
       console.log('Fetching weather for:', city);
-      const response = await fetch(`${API_BASE_URL}/weather`, {
+      const response = await fetch(`${API_BASE_URL}/api/weather`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ city })
@@ -266,7 +266,7 @@ const WeatherSpotifyChatbot = () => {
   const getMusicRecommendations = async (weatherData) => {
     try {
       console.log('Fetching music recommendations for:', weatherData);
-      const response = await fetch(`${API_BASE_URL}/music`, {
+      const response = await fetch(`${API_BASE_URL}/api/music`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

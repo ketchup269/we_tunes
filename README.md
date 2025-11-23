@@ -10,7 +10,7 @@
 
 **An intelligent chatbot that combines real-time weather data with AI-powered music recommendations using Google's Gemini AI and Spotify API.**
 
-![Dark Mode](./assets/Screenshot 2025-11-23 131616.png)
+![Dark Mode](./assets/demo-home.png)
 
 [Features](#-features) • [Demo](#-demo) • [Installation](#-installation) • [API Keys](#-api-keys-setup) • [Usage](#-usage) • [Architecture](#-architecture)
 
